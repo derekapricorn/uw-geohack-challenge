@@ -55,7 +55,7 @@ def tiles2img(img_fn_list, dst_fn):
 
 def resize_img(img_fn, w_size=672, h_size=448, dst_folder=''):
     img = cv2.imread(img_fn)
-    img.resize(img, (h_size, w_size, 3), preserve_range=True)
+    img = resize(img, (h_size, w_size, 3), preserve_range=True)
     if dst_folder:
         fn = os.path.join(dst_folder, os.path.basename(img_fn))
         cv2.imwrite(fn, img)
@@ -67,6 +67,16 @@ def resize_mask(mask_fn, w_size=672, h_size=448, dst_folder=''):
         fn = os.path.join(dst_folder, os.path.basename(mask_fn))
         mask.save(fn)
 
+def replace_pixel_vals(img_fn, positive_codes, dst_folder=''):
+    img_arr = cv2.imread(img_fn)
+    assert 1 not in positive_codes
+    img_arr[img_arr==1] = 255
+    [img_arr[img_arr==c]=1 for c in positive_codes]
+    img_arr[img_arr!=1] = 0
+    if dst_folder:
+        fn = os.path.join(dst_folder, os.path.basename(img_fn))
+        cv2.imwrite(fn, img_arr)
+        
 if __name__ == '__main__':
     # img2tiles(sys.argv[1], dst_folder=sys.argv[2])
 
