@@ -4,10 +4,16 @@ import cv2
 import numpy as np
 from skimage.util import view_as_blocks, montage, pad
 from sklearn.feature_extraction.image import extract_patches_2d
+from functools import partial
 # from skimage.util.shape import view_as_blocks
 
 get_image_name = lambda fn: os.path.basename(fn).lstrip('ortho_eval_').rstrip('.tif')
 get_row_col = lambda fn: tuple(map(int, get_image_name(fn).split('_')))
+
+def batch_process_img2tiles(src_folder_path, dst_folder_path):
+    batch_process = partial(img2tiles, size=224, dst_folder=dst_folder_path)
+    img_files = glob.glob(src_folder_path+'/*')
+    [batch_process(img_fn) for img_fn in img_files]
 
 def img2tiles(img_fn, size=224, dst_folder=''):
     '''
@@ -45,12 +51,12 @@ def tiles2img(img_fn_list, dst_fn):
     cv2.imwrite(dst_fn, res)
 
 if __name__ == '__main__':
-    # img2tiles(sys.argv[1], dst_folder=sys.argv[2])
-    img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
-    img_fn_list.sort(key=lambda fn: get_row_col(fn))
-    print('\n'.join(img_fn_list))
-    exit(-1)
-    dst = "/Users/derekz/derekz/img_seg/patchify.py/test/original/recovered.tif"
-    tiles2img(img_fn_list, dst)
+    img2tiles(sys.argv[1], dst_folder=sys.argv[2])
+    # img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
+    # img_fn_list.sort(key=lambda fn: get_row_col(fn))
+    # print('\n'.join(img_fn_list))
+    # exit(-1)
+    # dst = "/Users/derekz/derekz/img_seg/patchify.py/test/original/recovered.tif"
+    # tiles2img(img_fn_list, dst)
 
 
