@@ -40,18 +40,26 @@ def img2tiles(img_fn, w_size=672, h_size=448, dst_folder=''):
                 cv2.imwrite(fn, blocks[i,j,0,...])
 
 
-def tiles2img(img_fn_list, dst_fn):
+def tiles2img(img_fn_list, dst_fn, origin_size=None):
     '''
     arr_in(K, M, N[, C]) ndarray, where K is number of images to be collaged
     '''
-    arr_in = np.zeros((len(img_fn_list), 224, 224, 3))
+    if not origin_size:
+        print("needs to specify original size")
+        exit(-1)
+    h_patch_num, w_patch_num = get_row_col(img_fn_list[-1])
+    h_patch, w_patch, _ = cv2.imread(img_fn_list[-1]).shape
+    arr_in = np.zeros(((h_patch_num+1)*h_patch, (w_patch_num+1)*w_patch, 3))
+    h_, w_, _ = arr_in.shape
     for idx, img_fn in enumerate(img_fn_list):
+        row, col = get_row_col(img_fn)
         img = cv2.imread(img_fn)
-        arr_in[idx,...] = img
-    h_, w_ = get_row_col(img_fn_list[-1])
-    grid_shape = (h_+1, w_+1, 3)
-    res = montage(arr_in, grid_shape, multichannel=True)
-    cv2.imwrite(dst_fn, res)
+        r_start, r_end = row*h_patch, (row+1)*h_patch
+        c_start, c_end = col*w_patch, (col+1)*w_patch
+        arr_in[r_start:r_end, c_start:c_end, :] = img
+    h_o, w_o, _ = origin_size
+    arr_out = arr_in[:h_o, :w_o, :]
+    cv2.imwrite(dst_fn, arr_out)
 
 def resize_img(img_fn, w_size=672, h_size=448, dst_folder=''):
     img = cv2.imread(img_fn)
@@ -71,7 +79,7 @@ def replace_pixel_vals(img_fn, positive_codes, dst_folder=''):
     img_arr = cv2.imread(img_fn)
     assert 1 not in positive_codes
     img_arr[img_arr==1] = 255
-    [img_arr[img_arr==c]=1 for c in positive_codes]
+    # [img_arr[img_arr==c]=1 for c in positive_codes]
     img_arr[img_arr!=1] = 0
     if dst_folder:
         fn = os.path.join(dst_folder, os.path.basename(img_fn))
@@ -82,12 +90,12 @@ if __name__ == '__main__':
 
     # batch_process(resize_img, sys.argv[1], sys.argv[2])
 
-    resize_img(sys.argv[1], dst_folder=sys.argv[2])
-    # img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
-    # img_fn_list.sort(key=lambda fn: get_row_col(fn))
-    # print('\n'.join(img_fn_list))
-    # exit(-1)
-    # dst = "/Users/derekz/derekz/img_seg/patchify.py/test/original/recovered.tif"
-    # tiles2img(img_fn_list, dst)
+    # resize_img(sys.argv[1], dst_folder=sys.argv[2])
+    img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
+    img_fn_list.sort(key=lambda fn: get_row_col(fn))
+    print('\n'.join(img_fn_list))
+    dst = "/Users/derekz/derekz/img_seg/patchify.py/test/original/recovered.tif"
+    # tiles2img(img_fn_list, dst, origin_size=(7168,5376,3))
+    tiles2img(img_fn_list, dst, origin_size=(7068, 5160, 3))
 
 
