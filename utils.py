@@ -1,6 +1,7 @@
 import os, sys
 import glob
 import cv2
+from PIL import Image
 import numpy as np
 from skimage.transform import resize
 from skimage.util import view_as_blocks, montage, pad
@@ -54,16 +55,24 @@ def tiles2img(img_fn_list, dst_fn):
 
 def resize_img(img_fn, w_size=672, h_size=448, dst_folder=''):
     img = cv2.imread(img_fn)
-    img = resize(img, (h_size, w_size, 3), preserve_range=True)
-    if dst_dir:
+    img.resize(img, (h_size, w_size, 3), preserve_range=True)
+    if dst_folder:
         fn = os.path.join(dst_folder, os.path.basename(img_fn))
         cv2.imwrite(fn, img)
+
+def resize_mask(mask_fn, w_size=672, h_size=448, dst_folder=''):
+    mask = Image.open(mask_fn)
+    mask = mask.resize((w_size, h_size), Image.NEAREST)
+    if dst_folder:
+        fn = os.path.join(dst_folder, os.path.basename(mask_fn))
+        mask.save(fn)
 
 if __name__ == '__main__':
     # img2tiles(sys.argv[1], dst_folder=sys.argv[2])
 
-    batch_process(resize_img, sys.argv[1], sys.argv[2])
-    
+    # batch_process(resize_img, sys.argv[1], sys.argv[2])
+
+    resize_img(sys.argv[1], dst_folder=sys.argv[2])
     # img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
     # img_fn_list.sort(key=lambda fn: get_row_col(fn))
     # print('\n'.join(img_fn_list))
