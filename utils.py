@@ -2,33 +2,35 @@ import os, sys
 import glob
 import cv2
 import numpy as np
+from skimage.transform import resize
 from skimage.util import view_as_blocks, montage, pad
 from sklearn.feature_extraction.image import extract_patches_2d
 from functools import partial
+import matplotlib.pyplot as plt
 # from skimage.util.shape import view_as_blocks
 
 get_image_name = lambda fn: os.path.basename(fn).lstrip('ortho_eval_').rstrip('.tif')
 get_row_col = lambda fn: tuple(map(int, get_image_name(fn).split('_')))
 
-def batch_process_img2tiles(src_folder_path, dst_folder_path):
-    batch_process = partial(img2tiles, size=224, dst_folder=dst_folder_path)
+def batch_process(func, src_folder_path, dst_folder_path):
+    batch_process = partial(func, dst_folder=dst_folder_path)
     img_files = glob.glob(src_folder_path+'/*')
     [batch_process(img_fn) for img_fn in img_files]
 
-def img2tiles(img_fn, size=224, dst_folder=''):
+def img2tiles(img_fn, w_size=672, h_size=448, dst_folder=''):
     '''
     split a large image into multiple tiles of square shape and fixed size
     If the image size is not multiple of given size, zero-pad the edges
     '''
-    assert type(size)==int
+    assert type(w_size)==int and type(h_size)==int
     _, image_ext = os.path.splitext(img_fn)
     image_name = os.path.basename(img_fn).rstrip(image_ext)
     img = cv2.imread(img_fn)
     print("shape of image is {}".format(img.shape))
     h,w= img.shape[:2]
-    w_pad, h_pad = size - w%size, size - h%size
+    w_pad, h_pad = w_size - w%w_size, h_size - h%h_size
     img = pad(img, ((0, h_pad), (0, w_pad), (0, 0)))
-    blocks = view_as_blocks(img, (size, size, 3)) #shape: (new_h, new_w, 1, size, size, 3)
+    blocks = view_as_blocks(img, (h_size, w_size, 3)) #shape: (new_h, new_w, 1, size, size, 3)
     new_h, new_w = blocks.shape[:2]
     if dst_folder:
         for i in range(new_h):
@@ -50,8 +52,18 @@ def tiles2img(img_fn_list, dst_fn):
     res = montage(arr_in, grid_shape, multichannel=True)
     cv2.imwrite(dst_fn, res)
 
+def resize_img(img_fn, w_size=672, h_size=448, dst_folder=''):
+    img = cv2.imread(img_fn)
+    img = resize(img, (h_size, w_size, 3), preserve_range=True)
+    if dst_dir:
+        fn = os.path.join(dst_folder, os.path.basename(img_fn))
+        cv2.imwrite(fn, img)
+
 if __name__ == '__main__':
-    img2tiles(sys.argv[1], dst_folder=sys.argv[2])
+    # img2tiles(sys.argv[1], dst_folder=sys.argv[2])
+
+    batch_process(resize_img, sys.argv[1], sys.argv[2])
+    
     # img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
     # img_fn_list.sort(key=lambda fn: get_row_col(fn))
     # print('\n'.join(img_fn_list))
