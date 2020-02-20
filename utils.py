@@ -8,9 +8,8 @@ from skimage.util import view_as_blocks, montage, pad
 from sklearn.feature_extraction.image import extract_patches_2d
 from functools import partial
 import matplotlib.pyplot as plt
-# from skimage.util.shape import view_as_blocks
 
-get_image_name = lambda fn: os.path.basename(fn).lstrip('ortho_eval_').rstrip('.tif')
+get_image_name = lambda fn: os.path.basename(fn).lstrip('ortho_eval_').rstrip('.png')
 get_row_col = lambda fn: tuple(map(int, get_image_name(fn).split('_')))
 
 def batch_process(func, src_folder_path, dst_folder_path):
@@ -20,8 +19,8 @@ def batch_process(func, src_folder_path, dst_folder_path):
 
 def img2tiles(img_fn, w_size=672, h_size=448, dst_folder=''):
     '''
-    split a large image into multiple tiles of square shape and fixed size
-    If the image size is not multiple of given size, zero-pad the edges
+    split a large image into multiple tiles 
+    If the image size is not multiple of given sizes, zero-pad the edges
     '''
     assert type(w_size)==int and type(h_size)==int
     _, image_ext = os.path.splitext(img_fn)
@@ -42,10 +41,11 @@ def img2tiles(img_fn, w_size=672, h_size=448, dst_folder=''):
 
 def tiles2img(img_fn_list, dst_fn, origin_size=None):
     '''
-    arr_in(K, M, N[, C]) ndarray, where K is number of images to be collaged
+    stitch up patches to form a final mask that's of the same size as the original image
+    arr_in(K, M, N[, C]) ndarray, where K is number of images to be combined
     '''
     if not origin_size:
-        print("needs to specify original size")
+        print("need to specify original size")
         exit(-1)
     h_patch_num, w_patch_num = get_row_col(img_fn_list[-1])
     h_patch, w_patch, _ = cv2.imread(img_fn_list[-1]).shape
@@ -58,7 +58,7 @@ def tiles2img(img_fn_list, dst_fn, origin_size=None):
         c_start, c_end = col*w_patch, (col+1)*w_patch
         arr_in[r_start:r_end, c_start:c_end, :] = img
     h_o, w_o, _ = origin_size
-    arr_out = arr_in[:h_o, :w_o, :]
+    arr_out = arr_in[:h_o, :w_o, :]*255 #output positive pixel pred should be 255 instead of 1
     cv2.imwrite(dst_fn, arr_out)
 
 def resize_img(img_fn, w_size=672, h_size=448, dst_folder=''):
@@ -85,18 +85,12 @@ def replace_pixel_vals(img_fn, positive_codes=[19], dst_folder=''):
     if dst_folder:
         fn = os.path.join(dst_folder, os.path.basename(img_fn))
         cv2.imwrite(fn, img_arr)
-        
+
+def sort_img_fns(img_fn_list):
+    return img_fn_list.sort(key=lambda fn: get_row_col(fn))
+    
 if __name__ == '__main__':
-    # img2tiles(sys.argv[1], dst_folder=sys.argv[2])
-
+    pass
     # batch_process(resize_img, sys.argv[1], sys.argv[2])
-
-    # resize_img(sys.argv[1], dst_folder=sys.argv[2])
-    img_fn_list = glob.glob("/Users/derekz/derekz/img_seg/patchify.py/test/patches/*.tif")
-    img_fn_list.sort(key=lambda fn: get_row_col(fn))
-    print('\n'.join(img_fn_list))
-    dst = "/Users/derekz/derekz/img_seg/patchify.py/test/original/recovered.tif"
-    # tiles2img(img_fn_list, dst, origin_size=(7168,5376,3))
-    tiles2img(img_fn_list, dst, origin_size=(7068, 5160, 3))
 
 
