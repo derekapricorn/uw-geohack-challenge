@@ -67,11 +67,12 @@ def resize_mask(mask_fn, w_size=672, h_size=448, dst_folder=''):
         fn = os.path.join(dst_folder, os.path.basename(mask_fn))
         mask.save(fn)
 
-def replace_pixel_vals(img_fn, positive_codes, dst_folder=''):
+def replace_pixel_vals(img_fn, positive_codes=[19], dst_folder=''):
     img_arr = cv2.imread(img_fn)
     assert 1 not in positive_codes
     img_arr[img_arr==1] = 255
-    [img_arr[img_arr==c]=1 for c in positive_codes]
+    for c in positive_codes:
+        img_arr[img_arr==c]=1
     img_arr[img_arr!=1] = 0
     if dst_folder:
         fn = os.path.join(dst_folder, os.path.basename(img_fn))
